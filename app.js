@@ -6,15 +6,20 @@ const dotenv = require('dotenv');
 const path = require('path');
 const bodyParsor = require('body-parser');
 const nunjucks = require('nunjucks');
-const app = express();
 
 //.env 파일을 읽어와서 process.env로 만든다
 dotenv.config();
 const indexRouter = require('./routes');
 const userRouter = require('./routes/user');
 
-
+const app = express();
 app.set('port',process.env.PORT || 3000);
+app.set('view engine','html');
+
+nunjucks.configure('views',{
+    express: app,
+    watch: true,
+});
 
 app.use(bodyParsor.raw());
 app.use(bodyParsor.text());
@@ -72,12 +77,16 @@ app.route('/', indexRouter);
 app.route('/user', userRouter);
 
 app.use((req, res, next) => {
-    res.status(404).send('404 Not Found');
-  });
+    const error =  new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
+    error.status = 404;
+    next(error);
+});
 
 app.use((err, req, res, next) => {
-    console.error(err);
-    res.status(500).send(err.message);
+    res.locals.message = err.message;
+    res.locals.error = process.env.NODE_ENV !== 'production' ? err : {};
+    res.status(err.status || 500);
+    res.render('error');
 });
 
 app.listen(app.get('port'), () => {
