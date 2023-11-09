@@ -6,11 +6,14 @@ const dotenv = require('dotenv');
 const path = require('path');
 const bodyParsor = require('body-parser');
 const nunjucks = require('nunjucks');
+const app = express();
 
 //.env 파일을 읽어와서 process.env로 만든다
 dotenv.config();
+const indexRouter = require('./routes');
+const userRouter = require('./routes/user');
 
-const app = express();
+
 app.set('port',process.env.PORT || 3000);
 
 app.use(bodyParsor.raw());
@@ -65,13 +68,12 @@ app.post('/upload',upload.fields([{name: 'image1'}, {name: 'image2'}]),
     res.send('ok!');
 },
 );
+app.route('/', indexRouter);
+app.route('/user', userRouter);
 
-app.get('/',(req, res, next) => {
-    console.log('request GET');
-    next();
-}, (req, res) => {
-    throw new Error('Error!')
-});
+app.use((req, res, next) => {
+    res.status(404).send('404 Not Found');
+  });
 
 app.use((err, req, res, next) => {
     console.error(err);
